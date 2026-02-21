@@ -1,167 +1,303 @@
 ---
 name: workflows:create
-description: Produce marketing content and assets from a brief, executing all production tasks systematically with built-in copy review
-argument-hint: "[brief file path or asset description]"
+description: Produce marketing content and assets from a brief. Uses swarm-based parallel execution for complex multi-deliverable campaigns and sequential execution for simpler briefs. Generates A/B variants at creation time.
+argument-hint: "[brief file path]"
 ---
 
 # Create Marketing Assets
 
-Execute a marketing brief efficiently, producing complete, reviewed assets.
-
-## Introduction
-
-This command takes a brief document and produces the assets it specifies. The focus is on **shipping complete, reviewed assets** by understanding the brief thoroughly, drawing on proven copy patterns, and running quality checks before handoff.
+Execute a marketing brief to produce complete, reviewed assets. Automatically selects swarm mode (parallel) for complex campaigns or sequential mode for simple ones.
 
 ## Input Document
 
 <input_document> #$ARGUMENTS </input_document>
 
-## Execution Workflow
+**If the input above is empty:**
+Use **AskUserQuestion tool** to ask: "Which brief should we produce assets from? Provide the path to a docs/briefs/ file."
 
-### Phase 1: Quick Start
+---
 
-1. **Read Brief and Clarify**
+## Phase 0: Load and Classify the Brief
 
-   - Read the brief document completely
-   - Review any reference links in the brief
-   - If anything is unclear or ambiguous, ask clarifying questions now — once production starts, mid-stream questions waste time
-   - Get clarity on: audience specifics, tone, word count, channel specs, CTA destination
+1. **Read the brief completely.** Do not proceed until fully read.
+2. **Detect campaign folder context:** Check if the brief lives under `campaigns/`. If yes, all outputs go to that campaign's `assets/` subfolder. If no, outputs go to `docs/assets/`.
+3. **Clarify before producing:** If anything is ambiguous (audience specifics, tone, word count, channel specs, CTA destination), ask now via AskUserQuestion — one question at a time.
+4. **Count deliverables** — extract the full asset list from the brief:
+   - Ads (how many concepts × which platforms)
+   - Emails (how many in the sequence)
+   - Landing pages
+   - Posters / print
+   - Other copy assets
+5. **Choose execution mode:**
+   - **3 or more distinct deliverable types** → **Swarm Mode** (Section A)
+   - **1–2 deliverable types** → **Sequential Mode** (Section B)
 
-2. **Swipe File Research**
+Announce the mode chosen: "Brief has [N] deliverable types — using [Swarm / Sequential] mode."
 
-   Before writing anything, run:
+---
 
-   - Task swipe-file-researcher("Find proven patterns for: [asset types in brief] for [audience segment]")
+## Section A: Swarm Mode (3+ Deliverable Types)
 
-   Apply relevant insights — use proven audience language, tested headline structures, CTA patterns that have worked.
+### A1: Offer Foundation (Synchronous — Must Complete First)
 
-3. **Create Todo List**
-   - Use TodoWrite to break the brief into individual asset tasks
-   - One task per deliverable (each email, each headline set, each section)
-   - Prioritize: foundational assets first (headlines → body → CTA → supporting)
-   - Include copy review as a task after each major asset
+Before spawning any parallel workers, the lead agent builds the shared offer foundation:
 
-### Phase 2: Execute
+Read the brief and produce a **Offer & Hook Document** with:
 
-**Task Execution Loop:**
+```markdown
+## Offer Foundation
 
-For each task in order:
+### Core Offer
+[What the campaign is selling — specific, factual, no fluff]
+
+### Primary Value Proposition
+[The single most important reason the audience should act — in their language]
+
+### Proof Points
+[Specific numbers, social proof, facts that support the offer]
+
+### Hook Options (3-5)
+[Different opening angles tested against different emotions: urgency, curiosity, FOMO, authority, contrarian]
+
+### CTA
+[Exact action + exact destination — no ambiguity]
+
+### Tone and Voice
+[3 adjectives that guide every word written: e.g., "Direct, urgent, insider"]
+
+### Audience Language
+[Specific phrases, pain points, desires from swipe file + brief — the words they use, not marketing-speak]
+
+### Test Strategy
+[From brief: single-variable | multi-concept]
+```
+
+Run swipe-file-researcher in parallel while building the foundation:
+- Task swipe-file-researcher("Find proven patterns for: [asset types] for [audience segment]")
+
+Write the Offer Foundation to `{output_dir}/offer-foundation.md`.
+
+**Wait for the Offer Foundation to be complete before proceeding.**
+
+### A2: Parallel Copy Production
+
+Spawn copy workers **simultaneously** — each gets the full brief + Offer Foundation:
 
 ```
-while (tasks remain):
-  - Mark task in_progress in TodoWrite
-  - Load relevant framework from copywriting-frameworks skill
-  - Check swipe file for relevant examples
-  - Write asset following brief specs and framework
-  - Mark task completed in TodoWrite
+Run in parallel (Task with run_in_background: true):
+
+Task ad-copywriter(
+  brief + offer_foundation,
+  output_dir,
+  "Write [N] ad concepts × [test_strategy] variants for [platforms]"
+)
+
+Task email-copywriter(
+  brief + offer_foundation,
+  output_dir,
+  "Write [N] email sequence with [test_strategy] variants"
+)
+
+Task lp-copywriter(
+  brief + offer_foundation,
+  output_dir,
+  "Write landing page copy with A/B variant"
+)
+
+Task poster-copywriter(
+  brief + offer_foundation,
+  output_dir,
+  "Write poster copy with A/B variant"
+)
 ```
 
-**Execution standards:**
+Each copy worker:
+1. Reads the brief + Offer Foundation
+2. Loads the `copywriting-frameworks` skill — selects the right framework for this asset type
+3. Loads the `ab-testing` skill — generates variants per the test_strategy
+4. Writes outputs to `{output_dir}/ads/`, `{output_dir}/emails/`, etc.
+5. Runs its own copy review (Task copy-reviewer + asset-specific reviewer in parallel)
+6. Reports completion with file paths
 
-- Follow the brief's core message strictly — don't drift
-- Use the audience's language (from swipe file research or brief)
-- Apply the appropriate framework (AIDA, PAS, FAB — see copywriting-frameworks skill)
-- Write to the brief's specified tone
-- Produce variations where the brief requests them (A/B headlines, subject lines)
+**Monitor all copy workers. Wait for ALL to complete before proceeding to A3.**
+
+### A3: Parallel Figma Design (Blocked by Copy Completion)
+
+Once all copy is complete, spawn Figma design workers **simultaneously**:
+
+```
+Run in parallel (Task with run_in_background: true):
+
+Task figma-designer(
+  brief + ad_copy_files,
+  output_dir,
+  "Design ad frames for all approved ad variants"
+)
+
+Task figma-designer(
+  brief + email_copy_files,
+  output_dir,
+  "Design email layouts for all email variants"
+)
+
+Task figma-designer(
+  brief + lp_copy_files,
+  output_dir,
+  "Design landing page frames for both LP variants"
+)
+
+Task figma-designer(
+  brief + poster_copy_files,
+  output_dir,
+  "Design poster frames for both poster variants"
+)
+```
+
+Each figma-designer instance:
+1. Reads the brief and the specific copy files it's designing for
+2. Follows the full `workflows:design` Phase 1-5 logic (design system discovery → planning → generation → review → spec)
+3. Writes design specs to `{output_dir}/[asset-type]/[filename]-design-spec.md`
+
+**Monitor all design workers. Wait for ALL to complete before proceeding to A4.**
+
+### A4: Swarm Completion Summary
+
+Collect all outputs from all workers. Present:
+
+```
+Campaign assets produced.
+
+Copy files:
+  Ads:
+  - {output_dir}/ads/ad-copy-{concept}-a.md
+  - {output_dir}/ads/ad-copy-{concept}-b.md
+  ...
+
+  Emails:
+  - {output_dir}/emails/email-1-copy-a.md
+  - {output_dir}/emails/email-1-copy-b.md
+  ...
+
+  Landing Page:
+  - {output_dir}/landing-pages/lp-copy-a.md
+  - {output_dir}/landing-pages/lp-copy-b.md
+
+  Posters:
+  - {output_dir}/posters/poster-copy-a.md
+  - {output_dir}/posters/poster-copy-b.md
+
+Design specs:
+  [List all -design-spec.md files]
+
+Review findings:
+  P1 issues: [count — must fix before publishing]
+  P2 issues: [count]
+  P3 issues: [count]
+
+Total deliverables: [N] copy files + [M] design specs
+```
+
+Use **AskUserQuestion** to offer next steps:
+1. **Run full review** — `/workflows:review [campaign folder]` for multi-specialist review including funnel consistency
+2. **View a specific asset** — Open any file to review
+3. **Continue to calendar** — Check campaign timeline milestones
+4. **Capture insights** — `/workflows:report` if there are learnings to document
+
+---
+
+## Section B: Sequential Mode (1–2 Deliverable Types)
+
+### B1: Swipe File Research
+
+Before writing:
+- Task swipe-file-researcher("Find proven patterns for: [asset types] for [audience segment]")
+
+Apply relevant insights — proven audience language, tested headline structures, CTA patterns.
+
+### B2: Create Task List
+
+Use TodoWrite to break the brief into individual asset tasks:
+- One task per deliverable
+- Load `ab-testing` skill to determine variants needed
+- Include copy review as the final task
+
+### B3: Execute Tasks
+
+For each task:
+1. Mark in_progress in TodoWrite
+2. Load relevant framework from `copywriting-frameworks` skill
+3. Check swipe file for relevant examples
+4. Write the asset following brief specs and framework
+5. Apply `ab-testing` skill — generate the B variant
+6. Mark completed in TodoWrite
 
 **When writing copy:**
+- Start with the hook — the first line determines everything
+- Write the CTA before the body — know where you're taking them
+- Fill in the middle — connect hook to CTA with the core message
+- Cut ruthlessly — every sentence should earn its place
 
-1. Start with the hook — the first line determines everything
-2. Write the CTA before the body — know where you're taking them
-3. Fill in the middle — connect hook to CTA with the core message
-4. Cut ruthlessly — every sentence should earn its place
+**For email:** Subject line options before body. Preheader complements subject. Body delivers on subject line's promise within the first sentence.
 
-**For email specifically:**
-- Write subject line options before body copy
-- Preheader should complement subject, not repeat it
-- Body should deliver on the subject line's promise within the first sentence
+**For ads:** Know character limits first. Write 3+ headline variations across different hooks.
 
-**For ads specifically:**
-- Know the character limits before writing (Google: 30 chars headline, Meta: 125 chars primary text)
-- Write 3+ headline variations — different hooks, different frameworks
-- CTA button text matters: specific beats generic
+### B4: Quality Review
 
-### Phase 3: Quality Check
+After completing assets, run in parallel:
+- Task copy-reviewer(all asset content)
+- Task email-reviewer (if email content present)
+- Task seo-reviewer (if web content present)
+- Task ad-copy-reviewer (if ad copy present)
 
-After completing each major asset (or all assets if brief is small), run copy review:
+Address all P1 findings before handoff. Document P2 and P3.
 
-**Always run:**
-- Task copy-reviewer("Review for clarity, persuasion, and engagement: [asset content]")
+### B5: Produce Figma Designs (if brief calls for it)
 
-**Also run based on asset type:**
-- Web content → Task seo-reviewer("Check SEO for: [content]")
-- Email → Task email-reviewer("Review email for: [email content]")
-- Ads → Task ad-copy-reviewer("Review ad copy for: [ad content]")
+If the brief specifies visual design outputs, run `workflows:design` logic for each asset with a design requirement. Write design specs alongside the copy files.
 
-Run these **in parallel** when multiple reviewers apply.
+### B6: Handoff Summary
 
-**Address findings:**
-- Fix all P1 findings before handoff (they block publish)
-- Fix P2 findings unless there's a strong reason not to
-- Document P3 findings as optional improvements
+```
+Assets produced.
 
-### Phase 4: Handoff
+Files:
+- {output_dir}/[filename-a].md (Variant A)
+- {output_dir}/[filename-b].md (Variant B)
+[+ design specs if applicable]
 
-1. **Summary of deliverables**
+Review: [P1/P2/P3 counts]
 
-   List all assets produced with file locations:
-   ```
-   ✓ Assets produced
-
-   Email campaign:
-   - docs/assets/2026-02-20-email-body.md
-   - docs/assets/2026-02-20-subject-line-options.md
-
-   Blog post:
-   - docs/assets/2026-02-20-blog-saas-analytics.md
-
-   All copy reviewed — [X] P1 issues fixed, [Y] P2 issues fixed
-   ```
-
-2. **Next steps via AskUserQuestion:**
-   - Run `/workflows:review` for full multi-specialist review
-   - Capture winning patterns with `/workflows:report`
-   - Return to `/workflows:brief` if scope needs adjustment
+Next: /workflows:review for full specialist review
+```
 
 ---
 
 ## Output Location
 
-All assets written to `docs/assets/YYYY-MM-DD-<type>-<descriptor>.<ext>`
+**Campaign folder detected:** `campaigns/{name}/assets/{type}/`
+**No campaign folder:** `docs/assets/YYYY-MM-DD-<type>-<descriptor>-<variant>.<ext>`
 
-Ensure `docs/assets/` directory exists before writing.
+Variant naming: `{asset}-{concept}-{variant}.md`
+Examples: `ad-copy-awareness-a.md`, `email-1-subject-b.md`, `lp-copy-challenger.md`
 
-**No git workflow by default.** Assets are files handed off for human review and publishing. If working in a git-tracked website repo, follow your team's standard git workflow after handoff.
+Ensure the output directory exists before writing.
+
+---
+
+## A/B Variant Standards
+
+Load the `ab-testing` skill before generating any asset. Key rules:
+- Every major asset gets a minimum of 2 variants (A = control, B = challenger)
+- Each variant file includes in its frontmatter: `variant: A`, `test_variable: "headline"`, `hypothesis: "..."`
+- Single-variable testing: change ONE thing between variants for clean data
+- Multi-concept testing (when `test_strategy: multi-concept` in brief): vary the entire angle/approach
 
 ---
 
 ## Key Principles
 
-### The Brief Is Your Source of Truth
-- Don't drift from the brief's audience, message, or CTA
-- If the brief is incomplete, ask now — not during production
-
-### Frameworks Exist for a Reason
-- Apply AIDA, PAS, or FAB from the copywriting-frameworks skill
-- Decide which framework to use before writing, not after
-
-### Prove Claims
-- Never write a claim you can't back up with a fact, number, or customer quote
-- If the brief doesn't provide proof points, ask
-
-### Copy Review Before Handoff
-- Don't skip the copy-reviewer — it catches problems you've gone blind to
-- P1 issues are not negotiable
-
----
-
-## Quality Checklist
-
-Before handoff, verify:
-- [ ] All brief tasks marked completed in TodoWrite
-- [ ] Core message in brief is clear in every asset
-- [ ] Every CTA is specific (action + destination)
-- [ ] Copy reviewer run — all P1 issues fixed
-- [ ] Subject lines and headlines have 3+ variations (for testing)
-- [ ] Character limits respected (ads, subject lines)
-- [ ] Assets written to docs/assets/ with clear filenames
+- **The brief is your source of truth** — don't drift from audience, message, or CTA
+- **Frameworks exist for a reason** — decide which framework to use before writing
+- **Prove claims** — never write a claim without a fact, number, or quote from the brief
+- **P1 issues are not negotiable** — fix before handoff
+- **Variants by default** — every major asset needs a testable B variant

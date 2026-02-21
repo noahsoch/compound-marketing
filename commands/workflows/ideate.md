@@ -81,9 +81,21 @@ Use **AskUserQuestion tool** to ask which angle the user prefers.
 
 ### Phase 3: Capture the Ideation
 
-Write an ideation document to `docs/ideations/YYYY-MM-DD-<topic>-ideation.md`.
+**Campaign folder setup:**
 
-Ensure `docs/ideations/` directory exists before writing.
+Use **AskUserQuestion tool** to ask: "Is this part of a named campaign you'd like to track end-to-end? If yes, provide a campaign slug (e.g. `f1-weekend-2026`). If no, the ideation will be saved to `docs/ideations/`."
+
+If user provides a campaign slug:
+1. Create the campaign folder structure:
+   ```bash
+   mkdir -p campaigns/{slug}/plan campaigns/{slug}/assets/ads campaigns/{slug}/assets/emails campaigns/{slug}/assets/landing-pages campaigns/{slug}/reviews campaigns/{slug}/calendar campaigns/{slug}/reports
+   ```
+2. Write ideation to `campaigns/{slug}/plan/ideation.md`
+3. Announce: "Campaign folder created at `campaigns/{slug}/`. All outputs from this campaign will be organized there."
+
+If no campaign slug provided:
+- Write ideation to `docs/ideations/YYYY-MM-DD-<topic>-ideation.md`
+- Ensure `docs/ideations/` directory exists before writing.
 
 **Document structure (see `brainstorming` skill for the template format):**
 
@@ -91,6 +103,7 @@ Ensure `docs/ideations/` directory exists before writing.
 ---
 date: YYYY-MM-DD
 topic: <kebab-case-topic>
+campaign: <slug if campaign folder set up, else omit>
 audience: <specific segment>
 channel: <primary channel>
 ---
@@ -113,7 +126,7 @@ channel: <primary channel>
 [What needs to be resolved before briefing]
 
 ## Next Steps
-→ `/workflows:brief` to structure the full brief
+→ `/workflows:brief campaigns/{slug}/plan/ideation.md` to structure the full brief
 ```
 
 ### Phase 4: Handoff
@@ -142,14 +155,14 @@ When complete, display:
 ```
 Ideation complete!
 
-Document: docs/ideations/YYYY-MM-DD-<topic>-ideation.md
+Document: [campaigns/{slug}/plan/ideation.md  OR  docs/ideations/YYYY-MM-DD-<topic>-ideation.md]
 
 Key decisions:
 - Audience: [segment]
 - Core message: [one sentence]
 - Chosen angle: [angle name]
 
-Next: Run `/workflows:brief` when ready to structure the campaign.
+Next: Run `/workflows:brief [ideation path]` when ready to structure the campaign.
 ```
 
 ## Important Guidelines

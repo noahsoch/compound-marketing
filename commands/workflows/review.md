@@ -57,10 +57,16 @@ Once assets are loaded, classify what type of review applies:
 - Ads → Task ad-copy-reviewer(ad copy)
 - Voice guide provided → Task brand-voice-reviewer(content + voice guide)
 
-Launch all applicable agents **simultaneously** in a single message.
+**Full campaign review (multiple assets in a campaign folder):**
+Run the above agents plus these two cross-asset reviewers — always when reviewing a campaign folder:
+- Task funnel-consistency-reviewer(all asset files + brief path) — checks promise→delivery chain, offer consistency across touchpoints, A/B variant differentiation
+- Task metric-alignment-reviewer(all asset files + brief path) — checks every asset drives toward the brief's `target_metric`
 
-**Full review (multiple assets in a campaign):**
-Run all applicable agents across all assets at once — each agent handles its domain across all relevant content.
+Launch **all** applicable agents **simultaneously** in a single message.
+
+**Single-asset vs campaign-folder review:**
+- Single file path → run asset-type agents only
+- Campaign folder path → run all agents including funnel-consistency-reviewer and metric-alignment-reviewer
 
 ### 3. Synthesize Findings
 
@@ -76,13 +82,16 @@ After all agents complete:
 
 ### 4. Write Finding Files
 
-Write findings to `docs/reviews/` using this naming convention:
+Detect output directory:
+- Campaign folder detected → write to `{campaign}/reviews/`
+- No campaign folder → write to `docs/reviews/`
 
 ```
-docs/reviews/
+{reviews_dir}/
 ├── 001-pending-p1-missing-cta.md
-├── 002-pending-p2-buried-value-prop.md
-└── 003-pending-p3-subject-line-length.md
+├── 002-pending-p2-funnel-broken-promise.md
+├── 003-pending-p2-metric-cta-mismatch.md
+└── 004-pending-p3-subject-line-length.md
 ```
 
 **Naming convention:** `{number}-pending-{priority}-{description}.md`
@@ -120,6 +129,8 @@ After all finding files are created, present:
 
 **Assets reviewed:** [list]
 **Review agents used:** [list]
+**Campaign funnel review:** [✓ included / — single asset, skipped]
+**Metric alignment review:** [✓ included / — single asset, skipped]
 
 ### Findings Summary:
 - **Total:** [X]
@@ -133,10 +144,14 @@ After all finding files are created, present:
 ### P2 Findings (Should Fix):
 - `002-pending-p2-[description].md` — [brief description]
 
+### Funnel integrity: [Broken / Needs work / Solid]
+### Metric readiness: [Blocked / Needs work / Ready]
+
 ### Next Steps:
 1. Address P1 findings — required before publishing
 2. Run `/workflows:create` to implement fixes
-3. Capture any learnings with `/workflows:report`
+3. When P1s are clear, proceed to `/workflows:push`
+4. Capture any learnings with `/workflows:report`
 ```
 
 ## What's Working vs. What Needs Work

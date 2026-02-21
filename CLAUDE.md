@@ -28,25 +28,36 @@ Before committing ANY changes:
 
 ```
 agents/
-├── review/     # Marketing asset review agents
-├── research/   # Audience and market research agents
-└── workflow/   # Brief writing and planning agents
+├── review/     # Marketing asset review agents (9)
+├── research/   # Audience and market research agents (3)
+└── workflow/   # Brief writing, design, and platform formatter agents (6)
 
 commands/
-└── workflows/  # Core workflow commands (workflows:ideate, workflows:brief, etc.)
+└── workflows/  # Core workflow commands (8 total)
 
 skills/
-└── */          # All skills with SKILL.md and optional references/
+└── */          # All skills with SKILL.md and optional references/ (9 active)
+
+campaigns/      # Created at runtime by /workflows:ideate when a slug is provided
+└── {slug}/
+    ├── plan/       # ideation.md, brief.md, event-research.md, icp-research.md
+    ├── assets/     # ads/, emails/, landing-pages/
+    ├── reviews/    # findings from /workflows:review
+    ├── calendar/   # campaign-calendar.md
+    └── reports/    # push-log.md, post-campaign-report.md
 ```
 
 ## Command Naming Convention
 
 **Workflow commands** use `workflows:` prefix to avoid collisions with built-in commands:
-- `/workflows:ideate` - Explore campaign ideas
-- `/workflows:brief` - Create marketing briefs
-- `/workflows:create` - Produce content and assets
-- `/workflows:review` - Review assets with specialist agents
+- `/workflows:ideate` - Explore campaign ideas; optionally creates campaign folder
+- `/workflows:brief` - Create marketing briefs with parallel research; generates calendar
+- `/workflows:create` - Produce content and assets (swarm mode for 3+ deliverable types)
+- `/workflows:review` - Review assets with specialist + funnel + metric agents
+- `/workflows:push` - Format and push approved assets to external platforms
 - `/workflows:report` - Capture insights and winning copy
+- `/workflows:design` - Generate Figma designs from a brief
+- `/workflows:design-reflect` - Capture design preference insights from Figma edits
 
 **Why `workflows:`?** Claude Code has built-in `/plan` and `/review` commands. Using `name: workflows:ideate` in frontmatter creates a unique `/workflows:ideate` command with no collision.
 
@@ -103,9 +114,22 @@ Reference: `skills/swipe-file/references/yaml-schema.md`
 ### Workflow Loop
 
 ```
-ideate → brief → create → review → report
-  ↑                                    ↓
-  └────────── (swipe file) ────────────┘
+ideate → brief → create → review → push → report
+  │         │       ↑ (swarm)  │               ↓
+  │         ├→ event-researcher │               ↓
+  │         ├→ icp-researcher   └→ funnel-rev   ↓
+  │         └→ campaign-calendar   metric-rev   ↓
+  └→ [campaigns/{slug}/]                        ↓
+  ↑                                             ↓
+  └──────────────── (swipe file) ───────────────┘
 ```
 
-Each `/workflows:report` run adds entries to `docs/insights/` that future `/workflows:ideate` and `/workflows:brief` runs can surface via the `swipe-file-researcher` agent. This is the compounding flywheel.
+Each `/workflows:report` run adds entries to `docs/insights/` that future runs can surface via `swipe-file-researcher`. Each design edit captured by `/workflows:design-reflect` adds to `docs/insights/design-learnings/`. Knowledge compounds across both copy and visual tracks.
+
+### Key Downstream Dependencies
+
+- `target_metric` in brief frontmatter → required by `metric-alignment-reviewer`
+- `test_strategy` in brief frontmatter → required by `ab-testing` skill in `/workflows:create`
+- `event_date` in brief frontmatter → triggers calendar generation in `/workflows:brief`
+- `campaign_folder` in brief frontmatter → routes outputs for all downstream commands
+- `outlook_synced` in calendar frontmatter → checked by `/workflows:push` before Outlook sync

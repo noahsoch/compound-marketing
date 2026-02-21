@@ -1,0 +1,97 @@
+# Swipe File YAML Frontmatter Schema
+# All docs/insights/ files must validate against these enums
+
+asset_type:
+  enum:
+    - headline
+    - body_copy
+    - email_subject
+    - preheader
+    - cta
+    - landing_page
+    - ad_copy
+    - social_post
+    - case_study
+    - video_script
+    - webinar_title
+  - figma_frame
+  - landing_page_design
+  - ad_design
+  - poster_design
+  required: true
+
+channel:
+  enum:
+    - email
+    - google_ads
+    - meta_ads
+    - linkedin_ads
+    - seo_blog
+    - newsletter
+    - social_organic
+    - youtube
+    - podcast
+    - webinar
+    - direct_outreach
+  required: true
+
+performance_signal:
+  enum:
+    - high_ctr
+    - high_conversion
+    - high_open_rate
+    - high_reply_rate
+    - winner_ab_test
+    - audience_resonance
+    - viral_organic
+    - low_performance_note
+  - design_preference
+  - user_edited
+  required: true
+
+audience_segment:
+  type: string
+  description: "Free text — be specific. E.g. 'SaaS founders, 10-50 employees' not 'founders'"
+  required: true
+
+campaign_type:
+  enum:
+    - awareness
+    - acquisition
+    - retention
+    - reactivation
+    - product_launch
+    - content_marketing
+    - event_promotion
+  required: false
+
+date:
+  type: date
+  format: YYYY-MM-DD
+  required: true
+
+tags:
+  type: array
+  description: "Searchable keywords. Include: emotion (urgency, curiosity), format (listicle, story), topic"
+  required: false
+
+# Category directory mapping (from asset_type and performance_signal)
+category_mapping:
+  headline: winning-headlines
+  email_subject: winning-emails
+  preheader: winning-emails
+  ad_copy: winning-ads
+  social_post: winning-ads
+  body_copy: winning-copy
+  cta: winning-copy
+  landing_page: winning-copy
+  case_study: winning-copy
+  low_performance_note: failed-approaches
+  audience_resonance: audience-observations
+  figma_frame: design-learnings
+  landing_page_design: design-learnings
+  ad_design: design-learnings
+  poster_design: design-learnings
+  design_preference: design-learnings
+  user_edited: design-learnings
+  # Default for unlisted: campaign-learnings

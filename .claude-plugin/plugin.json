@@ -1,0 +1,36 @@
+{
+  "name": "compound-marketing",
+  "version": "1.2.0",
+  "description": "AI-powered marketing tools. 11 agents, 7 commands, 8 skills for the full ideate → brief → create → review → report loop, plus Figma design generation and design-learning.",
+  "author": {
+    "name": "Your Name",
+    "email": "you@example.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "ai-powered",
+    "compound-marketing",
+    "workflow-automation",
+    "copywriting",
+    "campaign-planning",
+    "seo",
+    "email-marketing",
+    "ad-copy",
+    "content-strategy",
+    "swipe-file"
+  ],
+  "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "figma": {
+      "type": "http",
+      "url": "https://mcp.figma.com/mcp"
+    },
+    "canva": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote@latest", "https://mcp.canva.com/mcp"]
+    }
+  }
+}

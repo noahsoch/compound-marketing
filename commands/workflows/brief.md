@@ -75,15 +75,15 @@ Continue until idea is clear OR user says "proceed."
 Run these agents **simultaneously** in a single message:
 
 - Task swipe-file-researcher(campaign_description)
-
-**If campaign has a specific event or the audience research would benefit from external context:**
-- Task event-context-researcher(campaign_description + event details if known)
 - Task icp-researcher(campaign_description + audience signals from ideation)
+
+**Also run if campaign is tied to a specific event:**
+- Task event-context-researcher(campaign_description + event details if known)
 
 **What each returns:**
 - **swipe-file-researcher:** Proven copy patterns, audience language, what has worked for this segment and channel. Grep-first from `docs/insights/`.
-- **event-context-researcher:** Event-specific hooks, timing windows, cultural moments, competitor campaign landscape. Saves to `{campaign_folder}/plan/event-research.md` if campaign folder exists.
-- **icp-researcher:** Audience demographics, community language (verbatim quotes), pain points, where they spend time. Saves to `{campaign_folder}/plan/icp-research.md` if campaign folder exists.
+- **icp-researcher:** Audience demographics, community language (verbatim quotes), pain points, where they spend time. Always runs — every campaign targets an audience. Saves to `{campaign_folder}/plan/icp-research.md` if campaign folder exists.
+- **event-context-researcher:** Event-specific hooks, timing windows, cultural moments, competitor campaign landscape. Saves to `{campaign_folder}/plan/event-research.md` if campaign folder exists. Skip if campaign is not event-driven.
 
 Wait for all research agents to complete before proceeding.
 
@@ -116,6 +116,7 @@ event_date: YYYY-MM-DD (if known)
 target_metric: email_subscribers | revenue | sign_ups | attendance | leads | app_installs
 test_strategy: single-variable | multi-concept
 brief_type: campaign | content | email | ad
+cta_destination: https://... (the exact URL the primary CTA sends users to)
 research_event: {campaign_folder}/plan/event-research.md (if exists)
 research_icp: {campaign_folder}/plan/icp-research.md (if exists)
 ---

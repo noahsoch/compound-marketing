@@ -146,7 +146,6 @@ tags: [tag1, tag2, tag3]
 Based on insight type, optionally invoke specialist agents to review the documentation:
 
 - **Winning copy entry** → copy-reviewer validates the copy description is accurate and complete
-- **Audience insight** → audience-researcher enriches with additional context
 - **Performance data** → performance-analyst adds interpretation of the metrics
 
 </parallel_tasks>

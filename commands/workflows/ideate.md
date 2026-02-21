@@ -39,12 +39,11 @@ Use **AskUserQuestion tool** to suggest: "Your requirements seem detailed enough
 
 #### 1.1 Swipe File Research (Lightweight — Always Runs)
 
-Run these agents **in parallel** to surface relevant institutional knowledge:
+Run this agent to surface relevant institutional knowledge:
 
 - Task swipe-file-researcher("Find relevant past insights and audience learnings for: <campaign_description>")
-- Task audience-researcher("Surface any known audience insights relevant to: <campaign_description>")
 
-Focus on: audience language patterns, proven angles, what has worked in this space.
+Focus on: audience language patterns, proven angles, what has worked in this space. (Full ICP research runs later at `/workflows:brief` stage.)
 
 #### 1.2 Collaborative Dialogue
 
